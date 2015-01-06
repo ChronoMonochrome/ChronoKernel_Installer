@@ -1,0 +1,1 @@
+/dev/block/mmcblk0p4                    /cache              ext4      noatime,nosuid,nodev,journal_async_commit,errors=panic                            wait,check

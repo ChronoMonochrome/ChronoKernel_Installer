@@ -1,0 +1,55 @@
+assert(getprop("ro.product.device") == "codina" || getprop("ro.build.product") == "codina" || 
+       getprop("ro.product.device") == "i8160" || getprop("ro.build.product") == "i8160" || 
+       getprop("ro.product.device") == "GT-I8160" || getprop("ro.build.product") == "GT-I8160" ||
+       getprop("ro.product.device") == "codinap" || getprop("ro.build.product") == "codinap" || 
+       getprop("ro.product.device") == "i8160P" || getprop("ro.build.product") == "i8160P" || 
+       getprop("ro.product.device") == "GT-I8160P" || getprop("ro.build.product") == "GT-I8160P" ||
+       abort("This package is for \"codina(p),i8160(P),GT-I8160(P)\" devices; this is a \"" + getprop("ro.product.device") + "\"."););
+run_program("/sbin/busybox", "mkdir", "/ramdisk");
+mount("ext4", "EMMC", "/dev/block/mmcblk0p17", "/ramdisk");
+ui_print("");
+ui_print("Chrono kernel for codina");
+ui_print("Based on stock CM kernel by Team Canjica");
+show_progress(0.050000, 0);
+ui_print("-> Mounting system...");
+run_program("/sbin/busybox","mount","/system");
+set_progress(0.100000);
+ui_print("-> Removing old init.d scripts...");
+delete("/system/etc/init.d/00autoload");
+set_progress(0.150000);
+ui_print("-> Extracting recovery folder...");
+package_extract_dir("recovery", "/tmp");
+ui_print("-> Extracting genfstab folder...");
+package_extract_dir("genfstab", "/tmp");
+ui_print("-> Extracting osfiles folder...");
+package_extract_dir("osfiles", "/tmp");
+set_perm_recursive(0, 0, 0777, 0777, "/tmp");
+ui_print("-> Extracting ramdisk folder...");
+package_extract_dir("ramdisk", "/ramdisk");
+ui_print("-> Extracting system folder...");
+package_extract_dir("system", "/system");
+set_progress(0.200000);
+ui_print("-> Setting permissions...");
+set_perm(0, 0, 0777, "/system/etc/init.d");
+set_perm(0, 0, 0644, "/ramdisk/modules/j4fs.ko");
+set_perm(0, 0, 0644, "/ramdisk/modules/f2fs.ko");
+set_perm(0, 0, 0644, "/ramdisk/modules/param.ko");
+set_perm(0, 0, 0750, "/ramdisk/device_tunables.rc");
+set_perm(0, 0, 0750, "/ramdisk/init.samsungcodina.rc");
+set_perm(0, 0, 0644, "/ramdisk/fstab");
+ui_print("-> Generating fstab...");
+run_program("/tmp/genfstab.sh");
+ui_print("-> Installing OS files...");
+set_perm(0, 0, 0644, "/ramdisk/recovery_default.prop");
+run_program("/tmp/osfiles_install.sh");
+set_progress(0.250000);
+run_program("/tmp/recovery_install.sh");
+ui_print("-> Setting scripts permissions...");
+set_perm(0, 2000, 0755, "/system/etc/init.d/00autoload");
+set_perm(0, 0, 0755, "/system/etc/init.d");
+set_progress(0.300000);
+ui_print("-> Flashing kernel");
+package_extract_file("boot.img","/dev/block/mmcblk0p15");
+set_progress(1.000000);
+unmount("/system");
+ui_print("Done :)")
